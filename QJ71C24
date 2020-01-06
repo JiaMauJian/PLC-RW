@@ -1,0 +1,31 @@
+Me.SerialPort1.Write(Chr(5) & "00FFWR0R02003F52" & vbCrLf)
+                    buf = Me.ReadSerialPortData()
+                    
+                    
+                    If buf.Length < 228 Then
+                        a = buf.Substring(5, 204)
+                    Else
+                        a = buf.Substring(5, 228)
+                    End If
+
+                    Dim arr = Enumerable.Range(0, a.Length / 4).Select(Function(x) a.Substring(x * 4, 4)).ToArray()                    
+                    Dim brr = Enumerable.Range(0, b.Length / 4).Select(Function(x) b.Substring(x * 4, 4)).ToArray()                    
+                    Dim Rrr1 = Enumerable.Range(0, r1.Length / 4).Select(Function(x) r1.Substring(x * 4, 4)).ToArray()                    
+                    Dim Rrr2 = Enumerable.Range(0, r2.Length / 4).Select(Function(x) r2.Substring(x * 4, 4)).ToArray()                   
+                    Dim Rrr3 = Enumerable.Range(0, r3.Length / 4).Select(Function(x) r3.Substring(x * 4, 4)).ToArray()                   
+                    Dim Rrr4 = Enumerable.Range(0, r4.Length / 4).Select(Function(x) r4.Substring(x * 4, 4)).ToArray()
+                    
+                    
+                    Dim r As String = String.Format("{0}{1}{2}{3}{4}{5}{6}{7}{8}{9}{10}{11}", _
+                                      Chr(Convert.ToInt32(arr(51).Substring(2, 2), 16)), _
+                                      Chr(Convert.ToInt32(arr(51).Substring(0, 2), 16)), _
+                                      Chr(Convert.ToInt32(arr(52).Substring(2, 2), 16)), _
+                                      Chr(Convert.ToInt32(arr(52).Substring(0, 2), 16)), _
+                                      Chr(Convert.ToInt32(arr(53).Substring(2, 2), 16)), _
+                                      Chr(Convert.ToInt32(arr(53).Substring(0, 2), 16)), _
+                                      Chr(Convert.ToInt32(arr(54).Substring(2, 2), 16)), _
+                                      Chr(Convert.ToInt32(arr(54).Substring(0, 2), 16)), _
+                                      Chr(Convert.ToInt32(arr(55).Substring(2, 2), 16)), _
+                                      Chr(Convert.ToInt32(arr(55).Substring(0, 2), 16)), _
+                                      Chr(Convert.ToInt32(arr(56).Substring(2, 2), 16)), _
+                                      Chr(Convert.ToInt32(arr(56).Substring(0, 2), 16))).Trim
