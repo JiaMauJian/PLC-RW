@@ -1,0 +1,207 @@
+#Region " PLC Read & Write "
+
+    Private Function ReadData16Bit(ByVal szarrDeviceNameBlock() As String, ByVal iDeviceSizeBlock As Integer) As String()
+
+        Dim iReturnCode As Integer              'Return code
+        Dim szDeviceName As String = ""         'List data for 'DeviceName'
+        Dim iNumberOfDeviceName As Integer = 0  'Data for 'DeviceSize'
+        Dim sharrDeviceValue() As Short         'Data for 'DeviceValue'
+        Dim szarrData() As String               'Array for 'Data'
+        Dim iNumber As Integer                  'Loop counter
+
+        szDeviceName = String.Join(vbLf, szarrDeviceNameBlock)
+
+        iNumberOfDeviceName = iDeviceSizeBlock
+
+        'Assign the array for 'DeviceValue'.
+        ReDim sharrDeviceValue(iNumberOfDeviceName - 1)
+
+        '
+        'Processing of ReadDeviceBlock2 method
+        '
+        Try
+
+            iReturnCode = AxActUtlType1.ReadDeviceBlock2(szDeviceName, iNumberOfDeviceName, sharrDeviceValue(0))
+        Catch exException As Exception
+            'Exception processing
+            MessageBox.Show(exException.Message, Name, MessageBoxButtons.OK, MessageBoxIcon.Error)
+            Return Nothing
+        End Try
+
+        If iReturnCode <> 0 Then
+            DisplayErrorMessage(iReturnCode)
+            Return Nothing
+            Exit Function
+        End If
+
+        '
+        'Display the read data
+        '
+        'When the ReadDeviceBlock2 method is succeeded, display the read data.
+        If iReturnCode = 0 Then
+
+            'Assign array for the read data.
+            ReDim szarrData(iNumberOfDeviceName - 1)
+
+            'Copy the read data to the 'lpszarrData'.
+            For iNumber = 0 To iNumberOfDeviceName - 1
+                szarrData(iNumber) = sharrDeviceValue(iNumber).ToString()
+            Next iNumber
+
+            'Set the read data to the 'Data', and display it.
+            Return szarrData
+        End If
+
+        Return Nothing
+
+    End Function
+
+    Private Function ReadData32Bit(ByVal szarrDeviceNameBlock() As String, ByVal iDeviceSizeBlock As Integer) As String
+
+        Dim iReturnCode As Integer                                              'Return code
+        Dim sharrBufferForDeviceValue(ELEMENT_SIZE_32BITINTEGER - 1) As Short   'Array for using BitConverter class
+        Dim byarrBufferByte(ELEMENT_SIZE_32BITINTEGER * 2 - 1) As Byte          'Array for reading to the PLC
+        Dim byarrTemp() As Byte                                                 'Temporary array for copying data
+        Dim iNumber As Integer                                                  'Loop counter
+        Dim szDeviceName As String
+
+        szDeviceName = String.Join(vbLf, szarrDeviceNameBlock)
+
+        '
+        'Processing of ReadDeviceBlock2 method
+        '
+        Try
+
+            iReturnCode = AxActUtlType1.ReadDeviceBlock2(szDeviceName, ELEMENT_SIZE_32BITINTEGER, sharrBufferForDeviceValue(0))
+        Catch exException As Exception
+            'Exception processing
+            MessageBox.Show(exException.Message, Name, MessageBoxButtons.OK, MessageBoxIcon.Error)
+            Return Nothing
+        End Try
+
+        If iReturnCode <> 0 Then
+            DisplayErrorMessage(iReturnCode)
+            Return Nothing
+            Exit Function
+        End If
+
+        '
+        'Display the read data
+        '
+        'When the ReadDeviceBlock2 method is succeeded, display the read data.
+        If iReturnCode = 0 Then
+
+            'Convert the 'sharrBufferForDeviceValue' to the array for using BitConverter class.
+            For iNumber = 0 To ELEMENT_SIZE_32BITINTEGER - 1
+                byarrTemp = BitConverter.GetBytes(sharrBufferForDeviceValue(iNumber))
+                byarrBufferByte(iNumber * 2) = byarrTemp(0)
+                byarrBufferByte(iNumber * 2 + 1) = byarrTemp(1)
+            Next iNumber
+
+            Return CStr(BitConverter.ToInt32(byarrBufferByte, 0))
+
+        End If
+
+        Return Nothing
+
+    End Function
+
+    Private Sub WriteData16Bit(ByVal szarrDeviceNameBlock() As String, ByVal iDeviceSizeBlock As Integer, ByVal value As Integer)
+
+        Dim iReturnCode As Integer              'Return code
+        Dim szDeviceName As String = ""         'List data for 'DeviceName'
+        Dim iNumberOfDeviceName As Integer = 0  'Data for 'DeviceSize'
+        Dim sharrDeviceValue() As Short         'Data for 'DeviceValue'
+
+        szDeviceName = String.Join(vbLf, szarrDeviceNameBlock)
+
+        iNumberOfDeviceName = iDeviceSizeBlock
+
+        'Check the 'DeviceValue'.(If succeeded, the value is gotten.)
+        ReDim sharrDeviceValue(iNumberOfDeviceName - 1)
+        sharrDeviceValue(0) = value
+        '
+        'Processing of WriteDeviceBlock2 method
+        '
+        Try
+            iReturnCode = AxActUtlType1.WriteDeviceBlock2(szDeviceName, iNumberOfDeviceName, sharrDeviceValue(0))
+        Catch exception As Exception
+            'Exception processing
+            MessageBox.Show(exception.Message, Text, MessageBoxButtons.OK, MessageBoxIcon.Error)
+            Exit Sub
+        End Try
+
+        If iReturnCode <> 0 Then
+            DisplayErrorMessage(iReturnCode)
+            Exit Sub
+        End If
+
+    End Sub
+
+    Private Function ReadASCII(ByVal szDeviceName As String) As String
+
+        Dim iReturnCode As Integer                                      'Return code
+        Dim byarrBufferByte(ELEMENT_SIZE_WORD * 2 - 1) As Byte          'Array for using BitConverter/Encoding class
+        Dim sharrBufferForDeviceValue(ELEMENT_SIZE_WORD - 1) As Short   'Array for reading to the PLC
+        Dim byarrTemp() As Byte                                         'Temporary array for copying data
+        Dim iNumber As Integer                                          'Loop counter
+
+        'Error Handler
+        On Error GoTo CatchError
+
+        'The ReadDeviceBlock2 method is executed.(from D0-D9)
+        iReturnCode = AxActUtlType1.ReadDeviceBlock2(szDeviceName, ELEMENT_SIZE_WORD, sharrBufferForDeviceValue(0))
+
+        'When ActUtlType returns error code, display error message.
+        If iReturnCode <> 0 Then
+            DisplayErrorMessage(iReturnCode)
+            Return Nothing
+        End If
+
+        'Convert the 'sharrBufferForDeviceValue' to the array for using BitConverter/Encoding class.
+        For iNumber = 0 To ELEMENT_SIZE_WORD - 1
+            byarrTemp = BitConverter.GetBytes(sharrBufferForDeviceValue(iNumber))
+            byarrBufferByte(iNumber * 2) = byarrTemp(0)
+            byarrBufferByte(iNumber * 2 + 1) = byarrTemp(1)
+        Next iNumber
+
+        'Convert to Unicode, and set the data to the TextBox.
+        Dim id As String = _objAsciiCodePageEncoding.GetString(byarrBufferByte)
+        If id.Length = 0 Then Return ""
+
+        id = id.TrimEnd("\0")
+        Dim arrChars() As Char = id.ToCharArray()
+        Dim newId As String = ""
+        For Each ch As Char In arrChars
+            If Char.IsDigit(ch) Or Char.IsLetter(ch) Or ch = "-" Then
+                newId = newId + ch
+            End If
+        Next
+
+        Return newId
+
+        Exit Function
+
+CatchError:  'Exception processing
+
+        MsgBox(Err.Description(), MsgBoxStyle.Critical)
+        End
+
+    End Function
+    
+    
+    
+    
+                 arrDeviceNameBlock(0) = "R10012"
+                id = ReadASCII(arrDeviceNameBlock(0)) 
+                
+                arrDeviceNameBlock(0) = "R10010"
+                WriteData16Bit(arrDeviceNameBlock, 1, 1)
+                
+                 arrDeviceNameBlock(0) = "R10002" 
+            data = ReadData32Bit(arrDeviceNameBlock, 1)
+            If DataIsNothing(data) Then Exit Sub
+            speed = Convert.ToInt32(data)
+            
+            arrDeviceNameBlock(0) = "M688"
+        arrData = ReadData16Bit(arrDeviceNameBlock, 1)
